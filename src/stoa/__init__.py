@@ -1,6 +1,7 @@
+from .io import load_spec, write_result
 from .models import OptimizationResult, PortfolioSpec, Regime, StoaValidationError
 from .optimizer import RobustAllocator
-from .io import load_spec, write_result
+
 __all__ = [
     "OptimizationResult",
     "PortfolioSpec",
