@@ -66,21 +66,36 @@ class RobustAllocator:
         within_variance = float(np.sum(self.probabilities * regime_variances))
         between_variance = float(np.sum(self.probabilities * centered**2))
         variance = max(within_variance + between_variance, 0.0)
-        robust_return = expected_return - self.spec.uncertainty_radius * float(np.linalg.norm(weights))
+        robust_return = expected_return - self.spec.uncertainty_radius * float(
+            np.linalg.norm(weights)
+        )
         turnover = float(np.abs(weights - self.spec.current_weights).sum())
-        transaction_cost = float(self.spec.transaction_costs @ np.abs(weights - self.spec.current_weights))
+        transaction_cost = float(
+            self.spec.transaction_costs @ np.abs(weights - self.spec.current_weights)
+        )
         risk_charge = 0.5 * self.spec.risk_aversion * variance
         turnover_charge = self.spec.turnover_penalty * turnover**2
         objective = robust_return - risk_charge - transaction_cost - turnover_charge
-        return _State(expected_return, robust_return, variance, transaction_cost, turnover, objective)
+        return _State(
+            expected_return,
+            robust_return,
+            variance,
+            transaction_cost,
+            turnover,
+            objective,
+        )
 
     def _gradient(self, weights: np.ndarray) -> np.ndarray:
         regime_returns = self.returns @ weights
         expected_return = float(self.probabilities @ regime_returns)
-        covariance_gradient = 2.0 * np.einsum("r,rij,j->ri", self.probabilities, self.covariances, weights).sum(axis=0)
+        covariance_gradient = 2.0 * np.einsum(
+            "r,rij,j->ri", self.probabilities, self.covariances, weights
+        ).sum(axis=0)
         regime_deviation = (regime_returns - expected_return)[:, None]
         return_deviation = self.returns - self.mean_return
-        between_gradient = 2.0 * np.sum(self.probabilities[:, None] * regime_deviation * return_deviation, axis=0)
+        between_gradient = 2.0 * np.sum(
+            self.probabilities[:, None] * regime_deviation * return_deviation, axis=0
+        )
         risk_gradient = covariance_gradient + between_gradient
         norm = max(float(np.linalg.norm(weights)), 1e-12)
         ambiguity_gradient = self.spec.uncertainty_radius * weights / norm
@@ -88,7 +103,13 @@ class RobustAllocator:
         cost_gradient = self.spec.transaction_costs * np.sign(turnover_difference)
         turnover_gradient = 2.0 * self.spec.turnover_penalty * turnover_difference
         risk_charge_gradient = 0.5 * self.spec.risk_aversion * risk_gradient
-        return self.mean_return - ambiguity_gradient - risk_charge_gradient - cost_gradient - turnover_gradient
+        return (
+            self.mean_return
+            - ambiguity_gradient
+            - risk_charge_gradient
+            - cost_gradient
+            - turnover_gradient
+        )
 
     def _project(self, weights: np.ndarray) -> np.ndarray:
         lower = self.spec.minimum_weights
@@ -108,7 +129,11 @@ class RobustAllocator:
         projected = np.clip(weights - 0.5 * (left + right), lower, upper)
         residual = self.spec.budget - projected.sum()
         if abs(residual) > 1e-8:
-            slack = np.maximum(upper - projected, 0.0) if residual > 0 else np.maximum(projected - lower, 0.0)
+            slack = (
+                np.maximum(upper - projected, 0.0)
+                if residual > 0
+                else np.maximum(projected - lower, 0.0)
+            )
             if slack.sum() > 0:
                 projected += residual * slack / slack.sum()
         if self.spec.max_turnover is not None:
@@ -121,7 +146,9 @@ class RobustAllocator:
         if turnover <= self.spec.max_turnover + 1e-10:
             return weights
         scale = self.spec.max_turnover / turnover
-        return self._project_without_turnover(self.spec.current_weights + scale * difference)
+        return self._project_without_turnover(
+            self.spec.current_weights + scale * difference
+        )
 
     def _project_without_turnover(self, weights: np.ndarray) -> np.ndarray:
         lower = self.spec.minimum_weights
@@ -130,12 +157,18 @@ class RobustAllocator:
         residual = self.spec.budget - candidate.sum()
         if abs(residual) <= 1e-10:
             return candidate
-        slack = np.maximum(upper - candidate, 0.0) if residual > 0 else np.maximum(candidate - lower, 0.0)
+        slack = (
+            np.maximum(upper - candidate, 0.0)
+            if residual > 0
+            else np.maximum(candidate - lower, 0.0)
+        )
         if slack.sum() == 0:
             return candidate
         return np.clip(candidate + residual * slack / slack.sum(), lower, upper)
 
-    def _result(self, weights: np.ndarray, state: _State, iterations: int, converged: bool) -> OptimizationResult:
+    def _result(
+        self, weights: np.ndarray, state: _State, iterations: int, converged: bool
+    ) -> OptimizationResult:
         regime_returns = self.returns @ weights
         return OptimizationResult(
             assets=self.spec.assets,
@@ -153,5 +186,7 @@ class RobustAllocator:
                 regime.name: float(value)
                 for regime, value in zip(self.spec.regimes, regime_returns, strict=True)
             },
-            regime_probabilities={regime.name: float(regime.probability) for regime in self.spec.regimes},
+            regime_probabilities={
+                regime.name: float(regime.probability) for regime in self.spec.regimes
+            },
         )

@@ -19,13 +19,19 @@ class Regime:
         returns = np.asarray(self.expected_returns, dtype=float)
         covariance = np.asarray(self.covariance, dtype=float)
         if returns.ndim != 1:
-            raise StoaValidationError("expected_returns must be a one-dimensional array")
+            raise StoaValidationError(
+                "expected_returns must be a one-dimensional array"
+            )
         if covariance.shape != (returns.size, returns.size):
-            raise StoaValidationError("covariance must be square with one row per asset")
+            raise StoaValidationError(
+                "covariance must be square with one row per asset"
+            )
         if not np.isfinite(returns).all() or not np.isfinite(covariance).all():
             raise StoaValidationError("regime inputs must be finite")
         if self.probability < 0 or not np.isfinite(self.probability):
-            raise StoaValidationError("regime probability must be non-negative and finite")
+            raise StoaValidationError(
+                "regime probability must be non-negative and finite"
+            )
         if not np.allclose(covariance, covariance.T, atol=1e-10):
             raise StoaValidationError("covariance must be symmetric")
         eigenvalues = np.linalg.eigvalsh(covariance)
@@ -58,22 +64,40 @@ class PortfolioSpec:
         if not self.regimes:
             raise StoaValidationError("at least one regime is required")
         n = len(assets)
-        probabilities = np.array([regime.probability for regime in self.regimes], dtype=float)
+        probabilities = np.array(
+            [regime.probability for regime in self.regimes], dtype=float
+        )
         if not np.isclose(probabilities.sum(), 1.0, atol=1e-8):
             raise StoaValidationError("regime probabilities must sum to one")
         for regime in self.regimes:
             if regime.expected_returns.size != n:
-                raise StoaValidationError("every regime must contain one expected return per asset")
-        if self.risk_aversion < 0 or self.uncertainty_radius < 0 or self.turnover_penalty < 0:
-            raise StoaValidationError("risk and penalty parameters must be non-negative")
+                raise StoaValidationError(
+                    "every regime must contain one expected return per asset"
+                )
+        if (
+            self.risk_aversion < 0
+            or self.uncertainty_radius < 0
+            or self.turnover_penalty < 0
+        ):
+            raise StoaValidationError(
+                "risk and penalty parameters must be non-negative"
+            )
         if self.budget <= 0:
             raise StoaValidationError("budget must be positive")
         if self.iterations < 1 or self.step_size <= 0:
             raise StoaValidationError("iterations and step_size must be positive")
-        costs = self._vector_or_default(self.transaction_costs, np.zeros(n), n, "transaction_costs")
-        current = self._vector_or_default(self.current_weights, np.zeros(n), n, "current_weights")
-        minimum = self._vector_or_default(self.minimum_weights, np.zeros(n), n, "minimum_weights")
-        maximum = self._vector_or_default(self.maximum_weights, np.full(n, self.budget), n, "maximum_weights")
+        costs = self._vector_or_default(
+            self.transaction_costs, np.zeros(n), n, "transaction_costs"
+        )
+        current = self._vector_or_default(
+            self.current_weights, np.zeros(n), n, "current_weights"
+        )
+        minimum = self._vector_or_default(
+            self.minimum_weights, np.zeros(n), n, "minimum_weights"
+        )
+        maximum = self._vector_or_default(
+            self.maximum_weights, np.full(n, self.budget), n, "maximum_weights"
+        )
         if (costs < 0).any():
             raise StoaValidationError("transaction costs must be non-negative")
         if (minimum > maximum).any():
@@ -82,8 +106,12 @@ class PortfolioSpec:
             raise StoaValidationError("weight bounds cannot satisfy the budget")
         if self.max_turnover is not None and self.max_turnover < 0:
             raise StoaValidationError("max_turnover must be non-negative")
-        if np.abs(current).sum() > 0 and not np.isclose(current.sum(), self.budget, atol=1e-8):
-            raise StoaValidationError("current_weights must sum to budget when supplied")
+        if np.abs(current).sum() > 0 and not np.isclose(
+            current.sum(), self.budget, atol=1e-8
+        ):
+            raise StoaValidationError(
+                "current_weights must sum to budget when supplied"
+            )
         object.__setattr__(self, "assets", assets)
         object.__setattr__(self, "transaction_costs", costs)
         object.__setattr__(self, "current_weights", current)
@@ -91,7 +119,9 @@ class PortfolioSpec:
         object.__setattr__(self, "maximum_weights", maximum)
 
     @staticmethod
-    def _vector_or_default(value: np.ndarray | None, default: np.ndarray, size: int, name: str) -> np.ndarray:
+    def _vector_or_default(
+        value: np.ndarray | None, default: np.ndarray, size: int, name: str
+    ) -> np.ndarray:
         result = default if value is None else np.asarray(value, dtype=float)
         if result.shape != (size,):
             raise StoaValidationError(f"{name} must contain one value per asset")
@@ -119,7 +149,10 @@ class OptimizationResult:
     def as_dict(self) -> dict[str, Any]:
         return {
             "assets": list(self.assets),
-            "weights": {asset: float(weight) for asset, weight in zip(self.assets, self.weights, strict=True)},
+            "weights": {
+                asset: float(weight)
+                for asset, weight in zip(self.assets, self.weights, strict=True)
+            },
             "expected_return": self.expected_return,
             "robust_return": self.robust_return,
             "variance": self.variance,

@@ -5,17 +5,23 @@ import json
 import sys
 from pathlib import Path
 
-from .io import load_spec, write_result
-from .optimizer import RobustAllocator
+from src.stoa.io import load_spec, write_result
+from src.stoa.optimizer import RobustAllocator
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="stoa", description="Robust portfolio allocation under model uncertainty")
+    parser = argparse.ArgumentParser(
+        prog="stoa", description="Robust portfolio allocation under model uncertainty"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
-    optimize = subparsers.add_parser("optimize", help="optimize a portfolio from a JSON configuration")
+    optimize = subparsers.add_parser(
+        "optimize", help="optimize a portfolio from a JSON configuration"
+    )
     optimize.add_argument("config", type=Path)
     optimize.add_argument("--output", type=Path)
-    validate = subparsers.add_parser("validate", help="validate a portfolio configuration")
+    validate = subparsers.add_parser(
+        "validate", help="validate a portfolio configuration"
+    )
     validate.add_argument("config", type=Path)
     return parser
 

@@ -51,12 +51,23 @@ def spec_from_dict(payload: dict[str, Any]) -> PortfolioSpec:
     )
     for field in optional_fields:
         if field in payload:
-            vector_fields = {"transaction_costs", "current_weights", "minimum_weights", "maximum_weights"}
-            values[field] = np.array(payload[field], dtype=float) if field in vector_fields else payload[field]
+            vector_fields = {
+                "transaction_costs",
+                "current_weights",
+                "minimum_weights",
+                "maximum_weights",
+            }
+            values[field] = (
+                np.array(payload[field], dtype=float)
+                if field in vector_fields
+                else payload[field]
+            )
     return PortfolioSpec(**values)
 
 
 def write_result(path: str | Path, result: dict[str, Any]) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    destination.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )

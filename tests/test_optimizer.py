@@ -55,7 +55,10 @@ def test_regime_dispersion_increases_total_variance():
     allocator = RobustAllocator(spec)
     weights = np.array([0.5, 0.5])
     state = allocator._state(weights)
-    within = 0.7 * weights @ spec.regimes[0].covariance @ weights + 0.3 * weights @ spec.regimes[1].covariance @ weights
+    within = (
+        0.7 * weights @ spec.regimes[0].covariance @ weights
+        + 0.3 * weights @ spec.regimes[1].covariance @ weights
+    )
     assert state.variance >= within
 
 
