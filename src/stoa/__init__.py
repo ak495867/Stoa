@@ -8,6 +8,7 @@ __all__ = [
     "Regime",
     "RobustAllocator",
     "StoaValidationError",
-    "load_spec" , "write_result"
+    "load_spec",
+    "write_result",
 ]
 __version__ = "0.1.0"
